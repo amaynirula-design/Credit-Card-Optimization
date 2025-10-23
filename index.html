@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Optimizer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const CATEGORIES = [
+          'Dining',
+          'Groceries',
+          'Gas',
+          'Travel (General)',
+          'Travel (Card Portal)',
+          'Online Shopping',
+          'Streaming Services',
+          'Drug Stores',
+          'Transit',
+          'Everything Else'
+        ];
+
+        const CARD_DATABASE = [
+          {
+            name: 'Chase Sapphire Preferred',
+            network: 'Visa',
+            rewardType: 'miles',
+            rewards: {
+              'Dining': '3',
+              'Travel (General)': '2',
+              'Travel (Card Portal)': '5',
+              'Online Shopping': '3',
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Chase Sapphire Reserve',
+            network: 'Visa',
+            rewardType: 'miles',
+            rewards: {
+              'Dining': '3',
+              'Travel (General)': '3',
+              'Travel (Card Portal)': '10',
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Chase Freedom Unlimited',
+            network: 'Visa',
+            rewardType: 'cashback',
+            rewards: {
+              'Dining': '3',
+              'Drug Stores': '3',
+              'Travel (General)': '5',
+              'Everything Else': '1.5'
+            }
+          },
+          {
+            name: 'Chase Freedom Flex',
+            network: 'Mastercard',
+            rewardType: 'cashback',
+            rewards: {
+              'Dining': '3',
+              'Drug Stores': '3',
+              'Gas': '3',
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Amex Gold',
+            network: 'American Express',
+            rewardType: 'miles',
+            rewards: {
+              'Dining': '4',
+              'Groceries': '4',
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Amex Platinum',
+            network: 'American Express',
+            rewardType: 'miles',
+            rewards: {
+              'Travel (Card Portal)': '5',
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Amex Blue Cash Preferred',
+            network: 'American Express',
+            rewardType: 'cashback',
+            rewards: {
+              'Groceries': '6',
+              'Streaming Services': '6',
+              'Transit': '3',
+              'Gas': '3',
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Citi Double Cash',
+            network: 'Mastercard',
+            rewardType: 'cashback',
+            rewards: {
+              'Everything Else': '2'
+            }
+          },
+          {
+            name: 'Citi Custom Cash',
+            network: 'Mastercard',
+            rewardType: 'cashback',
+            rewards: {
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Capital One Venture X',
+            network: 'Visa',
+            rewardType: 'miles',
+            rewards: {
+              'Travel (Card Portal)': '10',
+              'Travel (General)': '5',
+              'Everything Else': '2'
+            }
+          },
+          {
+            name: 'Capital One Venture',
+            network: 'Visa',
+            rewardType: 'miles',
+            rewards: {
+              'Travel (Card Portal)': '5',
+              'Everything Else': '2'
+            }
+          },
+          {
+            name: 'Capital One SavorOne',
+            network: 'Mastercard',
+            rewardType: 'cashback',
+            rewards: {
+              'Dining': '3',
+              'Streaming Services': '3',
+              'Groceries': '3',
+              'Everything Else': '1'
+            }
+          },
+          {
+            name: 'Discover it Cash Back',
+            network: 'Discover',
+            rewardType: 'cashback',
+            rewards: {
+              'Everything Else': '1'
+            }
+          }
+        ];
+
+        // Lucide Icons as SVG components
+        const Award = ({ className }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="8" r="6"></circle>
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+            </svg>
+        );
+
+        const CreditCard = ({ className }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+        );
+
+        const Plus = ({ className }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
+        const Trash2 = ({ className }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        );
+
+        const Edit2 = ({ className }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+            </svg>
+        );
+
+        const Database = ({ className }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+        );
+
+        function CardOptimizer() {
+          const [cards, setCards] = useState([]);
+          const [view, setView] = useState('recommend');
+          const [editingCard, setEditingCard] = useState(null);
+          const [selectedCategory, setSelectedCategory] = useState('');
+          const [showDatabase, setShowDatabase] = useState(false);
+
+          useEffect(() => {
+            const saved = localStorage.getItem('creditCards');
+            if (saved) {
+              setCards(JSON.parse(saved));
+            }
+          }, []);
+
+          useEffect(() => {
+            localStorage.setItem('creditCards', JSON.stringify(cards));
+          }, [cards]);
+
+          const addCard = (cardData) => {
+            setCards([...cards, { ...cardData, id: Date.now() }]);
+            setEditingCard(null);
+            setShowDatabase(false);
+          };
+
+          const updateCard = (id, cardData) => {
+            setCards(cards.map(card => card.id === id ? { ...cardData, id } : card));
+            setEditingCard(null);
+          };
+
+          const deleteCard = (id) => {
+            setCards(cards.filter(card => card.id !== id));
+          };
+
+          const getBestCards = (category) => {
+            if (!category || cards.length === 0) return [];
+            
+            let bestRate = 0;
+            const bestCards = [];
+
+            cards.forEach(card => {
+              const rate = parseFloat(card.rewards[category] || card.rewards['Everything Else'] || 0);
+              if (rate > bestRate) {
+                bestRate = rate;
+                bestCards.length = 0;
+                bestCards.push({ card, rate });
+              } else if (rate === bestRate && rate > 0) {
+                bestCards.push({ card, rate });
+              }
+            });
+
+            return bestCards;
+          };
+
+          return (
+            <div className="min-h-screen bg-black p-4">
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-zinc-900 rounded-lg shadow-lg p-6 mb-6 border border-zinc-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <Award className="w-8 h-8 text-[#00A19C]" />
+                      <h1 className="text-2xl font-bold text-white">Card Optimizer</h1>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {cards.length} {cards.length === 1 ? 'card' : 'cards'}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setView('recommend')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                        view === 'recommend'
+                          ? 'bg-[#00A19C] text-white'
+                          : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                      }`}
+                    >
+                      Find Best Card
+                    </button>
+                    <button
+                      onClick={() => setView('manage')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                        view === 'manage'
+                          ? 'bg-[#00A19C] text-white'
+                          : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                      }`}
+                    >
+                      Manage Cards
+                    </button>
+                  </div>
+                </div>
+
+                {view === 'recommend' && (
+                  <div className="bg-zinc-900 rounded-lg shadow-lg p-6 border border-zinc-800">
+                    {cards.length === 0 ? (
+                      <div className="text-center py-12">
+                        <CreditCard className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
+                        <h2 className="text-xl font-semibold text-white mb-2">No cards yet</h2>
+                        <p className="text-gray-400 mb-4">Add your credit cards to get started</p>
+                        <button
+                          onClick={() => setView('manage')}
+                          className="bg-[#00A19C] text-white px-6 py-2 rounded-lg hover:bg-[#00A19C] transition-colors"
+                        >
+                          Add Your First Card
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <h2 className="text-lg font-semibold text-white mb-4">What are you buying?</h2>
+                        <div className="grid grid-cols-2 gap-3">
+                          {CATEGORIES.map(category => (
+                            <button
+                              key={category}
+                              onClick={() => setSelectedCategory(category)}
+                              className={`p-4 rounded-lg text-left transition-all ${
+                                selectedCategory === category
+                                  ? 'bg-[#00A19C] text-white shadow-md'
+                                  : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                              }`}
+                            >
+                              <div className="font-medium text-sm">{category}</div>
+                            </button>
+                          ))}
+                        </div>
+
+                        {selectedCategory && (
+                          <div className="mt-6 space-y-3">
+                            {(() => {
+                              const results = getBestCards(selectedCategory);
+                              if (results.length === 0) {
+                                return (
+                                  <div className="p-6 bg-zinc-800 rounded-lg border border-zinc-700">
+                                    <p className="text-gray-400">No rewards for this category</p>
+                                  </div>
+                                );
+                              }
+                              return results.map(({ card, rate }, index) => (
+                                <div key={card.id} className="p-6 bg-gradient-to-br from-teal-400/30 to-emerald-900/30 rounded-lg border-2 border-teal-400">
+                                  <div className="text-sm text-white font-medium mb-2">
+                                    {results.length > 1 ? `BEST CARD ${index + 1} OF ${results.length} (TIE)` : 'BEST CARD TO USE'}
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="text-2xl font-bold text-white">{card.name}</div>
+                                      <div className="text-lg text-teal-600 font-semibold mt-1">
+                                        {rate}{card.rewardType === 'miles' ? 'x miles' : '% cash back'}
+                                      </div>
+                                    </div>
+                                    <Award className="w-12 h-12 text-teal-600" />
+                                  </div>
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {view === 'manage' && (
+                  <div className="space-y-4">
+                    {showDatabase && (
+                      <div className="bg-zinc-900 rounded-lg shadow-lg p-6 border border-zinc-800">
+                        <div className="flex items-center justify-between mb-4">
+                          <h2 className="text-xl font-semibold text-white">Select from Database</h2>
+                          <button
+                            onClick={() => setShowDatabase(false)}
+                            className="text-gray-400 hover:text-white text-2xl leading-none"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {CARD_DATABASE.map((dbCard, index) => (
+                            <button
+                              key={index}
+                              onClick={() => addCard(dbCard)}
+                              className="w-full text-left p-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors border border-zinc-700"
+                            >
+                              <div className="font-semibold text-white">{dbCard.name}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm text-gray-400">{dbCard.network}</span>
+                                <span className="text-xs bg-[#00A19C] text-white px-2 py-1 rounded">
+                                  {dbCard.rewardType === 'miles' ? 'Miles' : 'Cash Back'}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {editingCard !== null && (
+                      <CardForm
+                        card={editingCard === 'new' ? null : cards.find(c => c.id === editingCard)}
+                        onSave={(data) => {
+                          if (editingCard === 'new') {
+                            addCard(data);
+                          } else {
+                            updateCard(editingCard, data);
+                          }
+                        }}
+                        onCancel={() => setEditingCard(null)}
+                      />
+                    )}
+
+                    {editingCard === null && !showDatabase && (
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowDatabase(true)}
+                          className="flex-1 bg-[#00A19C] text-white py-3 rounded-lg hover:bg-[#00A19C] transition-colors flex items-center justify-center gap-2 font-medium"
+                        >
+                          <Database className="w-5 h-5" />
+                          Add from Database
+                        </button>
+                        <button
+                          onClick={() => setEditingCard('new')}
+                          className="flex-1 bg-zinc-800 text-white py-3 rounded-lg hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2 font-medium border border-zinc-700"
+                        >
+                          <Plus className="w-5 h-5" />
+                          Add Custom Card
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {cards.map(card => (
+                        <div key={card.id} className="bg-zinc-900 rounded-lg shadow p-4 border border-zinc-800">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h3 className="font-semibold text-white text-lg">{card.name}</h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                {card.network && (
+                                  <span className="text-sm text-gray-400">{card.network}</span>
+                                )}
+                                <span className="text-xs bg-[#00A19C] text-white px-2 py-1 rounded">
+                                  {card.rewardType === 'miles' ? 'Miles' : 'Cash Back'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setEditingCard(card.id)}
+                                className="p-2 text-gray-400 hover:text-[#00A19C] hover:bg-zinc-800 rounded transition-colors"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => deleteCard(card.id)}
+                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-zinc-800 rounded transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            {Object.entries(card.rewards).map(([category, rate]) => (
+                              rate > 0 && (
+                                <div key={category} className="flex justify-between text-gray-400">
+                                  <span className="truncate pr-2">{category}:</span>
+                                  <span className="font-medium text-white whitespace-nowrap">
+                                    {rate}{card.rewardType === 'miles' ? 'x' : '%'}
+                                  </span>
+                                </div>
+                              )
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        function CardForm({ card, onSave, onCancel }) {
+          const [name, setName] = useState(card?.name || '');
+          const [network, setNetwork] = useState(card?.network || '');
+          const [rewardType, setRewardType] = useState(card?.rewardType || 'cashback');
+          const [rewards, setRewards] = useState(
+            card?.rewards || Object.fromEntries(CATEGORIES.map(c => [c, '']))
+          );
+
+          const handleSave = () => {
+            if (!name.trim()) {
+              alert('Please enter a card name');
+              return;
+            }
+            onSave({ name, network, rewardType, rewards });
+          };
+
+          return (
+            <div className="bg-zinc-900 rounded-lg shadow-lg p-6 border border-zinc-800">
+              <h2 className="text-xl font-semibold text-white mb-4">
+                {card ? 'Edit Card' : 'Add Custom Card'}
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Card Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g., Chase Sapphire Preferred"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A19C] text-white placeholder-gray-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Card Network (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={network}
+                    onChange={(e) => setNetwork(e.target.value)}
+                    placeholder="e.g., Visa, Mastercard, Amex"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A19C] text-white placeholder-gray-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Reward Type *
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setRewardType('cashback')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                        rewardType === 'cashback'
+                          ? 'bg-[#00A19C] text-white'
+                          : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700 border border-zinc-700'
+                      }`}
+                    >
+                      Cash Back (%)
+                    </button>
+                    <button
+                      onClick={() => setRewardType('miles')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                        rewardType === 'miles'
+                          ? 'bg-[#00A19C] text-white'
+                          : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700 border border-zinc-700'
+                      }`}
+                    >
+                      Miles (x)
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Rewards by Category {rewardType === 'miles' ? '(multiplier)' : '(%)'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                    {CATEGORIES.map(category => (
+                      <div key={category}>
+                        <label className="block text-xs text-gray-400 mb-1">{category}</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={rewards[category] || ''}
+                          onChange={(e) => setRewards({ ...rewards, [category]: e.target.value })}
+                          placeholder="0"
+                          className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00A19C] text-white placeholder-gray-600"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleSave}
+                    className="flex-1 bg-[#00A19C] text-white py-2 rounded-lg hover:bg-[#00A19C] transition-colors font-medium"
+                  >
+                    {card ? 'Update Card' : 'Add Card'}
+                  </button>
+                  <button
+                    onClick={onCancel}
+                    className="flex-1 bg-zinc-800 text-gray-300 py-2 rounded-lg hover:bg-zinc-700 transition-colors font-medium border border-zinc-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<CardOptimizer />, document.getElementById('root'));
+    </script>
+</body>
+</html>
